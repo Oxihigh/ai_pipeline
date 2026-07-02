@@ -1,0 +1,34 @@
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Local Environment Variables & Credentials
+.env
+.env.local
+.env.*.local
+
+# SQLite Database State Manager
+*.db
+pipeline.db
+test_pipeline.db
+
+# Pipelines Execution Artifacts & Logs
+*.log
+pipeline.log
+data/
+output/
+mock_s3_bucket/
+
+# IDE / Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Virtual Environments
+venv/
+.venv/
+env/

@@ -1,0 +1,21 @@
+You are an expert customer service analyst specializing in Escrow and real estate transactions.
+Analyze the following customer call transcript and extract key structural details.
+
+Please identify and summarize:
+1. Call Reason: The primary reason the caller is contacting support (e.g., Escrow status inquiry, deposit confirmation, wire instructions, closing document issues).
+2. Customer Sentiment: The sentiment of the customer during the call (e.g., Positive, Neutral, Frustrated, Anxious).
+3. Main Escrow Issue: Any primary issue, dispute, or blocker mentioned regarding their Escrow.
+4. Next Steps: Action items or resolutions agreed upon during the call.
+
+Format your output strictly as a single-line JSON object (no markdown, no backticks, no trailing comments) with the following keys:
+{
+  "call_reason": "Summary of the call reason",
+  "customer_sentiment": "Sentiment value",
+  "main_escrow_issue": "Summary of the escrow issue",
+  "next_steps": "Action items or next steps"
+}
+
+Ensure the JSON is well-formed, valid, and contained entirely on a single line.
+
+Transcript:
+{transcript}
