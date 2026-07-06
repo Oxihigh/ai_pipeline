@@ -5,6 +5,9 @@ import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple, Dict, Any, Optional
 from config import PipelineConfig
+from botocore.config import Config
+import threading
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -12,12 +15,14 @@ class S3Client:
     def __init__(self, config: PipelineConfig):
         self.config = config
         self.mock = config.mock_s3
+        self._missing_file_lock = threading.Lock()
         
         if not self.mock:
             self.s3 = boto3.client(
                 "s3", 
                 region_name=self.config.aws_region,
-                endpoint_url=self.config.s3_endpoint_url
+                endpoint_url=self.config.s3_endpoint_url,
+                config=Config(max_pool_connections=self.config.max_s3_workers)
             )
         else:
             logger.info("Initializing Local Mock S3 Client...")
@@ -87,7 +92,17 @@ class S3Client:
                 content = response["Body"].read().decode("utf-8")
                 return uuid, content, None
             except self.s3.exceptions.NoSuchKey:
+                with self._missing_file_lock:
+                    with open("missing_transcripts.txt", "a") as f:
+                        f.write(f"{uuid}\n")
                 return uuid, "", f"S3 object not found (key: {key})"
+            except ClientError as e:
+                if e.response.get('Error', {}).get('Code') == 'AccessDenied':
+                    with self._missing_file_lock:
+                        with open("missing_transcripts.txt", "a") as f:
+                            f.write(f"{uuid}\n")
+                    return uuid, "", f"Transcript not found (AccessDenied due to missing ListBucket): {key}"
+                return uuid, "", f"S3 error: {e}"
             except Exception as e:
                 return uuid, "", f"S3 error: {e}"
 
