@@ -32,18 +32,18 @@ def run_extraction(config: PipelineConfig, state_manager: StateManager, limit: i
     logger.info("=========================================")
     
     db_client = DBClient(config)
-    uuids = db_client.extract_escrow_uuids()
+    records = db_client.extract_escrow_uuids()
     
     if limit:
         logger.info(f"Applying limit: restricting extraction list to first {limit} records.")
-        uuids = uuids[:limit]
+        records = records[:limit]
         
-    if not uuids:
+    if not records:
         logger.warning("No records extracted from the database.")
         return
         
-    inserted = state_manager.add_identified_records(uuids)
-    logger.info(f"Database extraction finished. Total identified records in DB: {len(uuids)}.")
+    inserted = state_manager.add_identified_records(records)
+    logger.info(f"Database extraction finished. Total identified records in DB: {len(records)}.")
     logger.info(f"Newly inserted records into tracking table: {inserted}.")
     
     stats = state_manager.get_stats()

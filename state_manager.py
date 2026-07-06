@@ -38,25 +38,63 @@ class StateManager:
                     ai_response TEXT
                 )
             """)
+            
+            # Dynamically add the new columns if they do not exist
+            cols = [
+                ("loan_number", "TEXT"),
+                ("latest_escrow_call_dt", "TEXT"),
+                ("long_comment_code", "TEXT"),
+                ("long_comment_date", "TEXT"),
+                ("long_comment_user_id", "TEXT"),
+                ("full_comment", "TEXT"),
+                ("comment_actv_flg", "TEXT"),
+                ("db_intac_uuid", "TEXT")
+            ]
+            for col_name, col_type in cols:
+                try:
+                    conn.execute(f"ALTER TABLE transcripts ADD COLUMN {col_name} {col_type}")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
+                    
             conn.execute("CREATE INDEX IF NOT EXISTS idx_status ON transcripts(status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_batch_job ON transcripts(batch_job_id)")
             conn.commit()
 
-    def add_identified_records(self, uuids: List[str]) -> int:
+    def add_identified_records(self, records: List[Any]) -> int:
         """
-        Inserts new UUIDs in 'IDENTIFIED' status.
+        Inserts new records in 'IDENTIFIED' status.
         Ignores duplicates to prevent overwriting existing progress.
         Returns the number of new records inserted.
         """
         now = datetime.now().isoformat()
         inserted = 0
         with self._get_connection() as conn:
-            # We insert one by one or in chunks to count accurately
-            for uuid in uuids:
+            for record in records:
+                if isinstance(record, str):
+                    uuid = record
+                    rec_dict = {"intac_uuid": uuid, "loan_number": uuid, "db_intac_uuid": uuid}
+                else:
+                    uuid = record["intac_uuid"]
+                    rec_dict = record
+                    
                 try:
                     cursor = conn.execute(
-                        "INSERT OR IGNORE INTO transcripts (intac_uuid, status, db_extracted_at) VALUES (?, 'IDENTIFIED', ?)",
-                        (uuid, now)
+                        """
+                        INSERT OR IGNORE INTO transcripts (
+                            intac_uuid, status, db_extracted_at, loan_number,
+                            latest_escrow_call_dt, long_comment_code, long_comment_date,
+                            long_comment_user_id, full_comment, comment_actv_flg,
+                            db_intac_uuid
+                        ) VALUES (?, 'IDENTIFIED', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            uuid, now, rec_dict.get("loan_number"),
+                            rec_dict.get("latest_escrow_call_dt"), rec_dict.get("long_comment_code"),
+                            rec_dict.get("long_comment_date"), rec_dict.get("long_comment_user_id"),
+                            rec_dict.get("full_comment"), rec_dict.get("comment_actv_flg"),
+                            rec_dict.get("db_intac_uuid")
+                        )
                     )
                     if cursor.rowcount > 0:
                         inserted += 1

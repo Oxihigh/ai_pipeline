@@ -141,7 +141,9 @@ class ResultParser:
         with self.state_manager._get_connection() as conn:
             # Querying everything to generate the full CSV
             cursor = conn.execute("""
-                SELECT intac_uuid, status, db_extracted_at, completed_at, ai_response, error_message
+                SELECT intac_uuid, status, db_extracted_at, completed_at, ai_response, error_message,
+                       loan_number, latest_escrow_call_dt, long_comment_code, long_comment_date,
+                       long_comment_user_id, full_comment, comment_actv_flg, db_intac_uuid
                 FROM transcripts
                 ORDER BY db_extracted_at ASC
             """)
@@ -153,9 +155,17 @@ class ResultParser:
 
         csv_headers = [
             "intac_uuid",
+            "db_intac_uuid",
             "status",
             "db_extracted_at",
             "completed_at",
+            "loan_number",
+            "latest_escrow_call_dt",
+            "long_comment_code",
+            "long_comment_date",
+            "long_comment_user_id",
+            "full_comment",
+            "comment_actv_flg",
             "call_reason",
             "customer_sentiment",
             "main_escrow_issue",
@@ -201,9 +211,17 @@ class ResultParser:
                     
                     writer.writerow({
                         "intac_uuid": row_dict["intac_uuid"],
+                        "db_intac_uuid": row_dict.get("db_intac_uuid") or "",
                         "status": row_dict["status"],
                         "db_extracted_at": row_dict["db_extracted_at"],
                         "completed_at": row_dict["completed_at"] or "",
+                        "loan_number": row_dict.get("loan_number") or "",
+                        "latest_escrow_call_dt": row_dict.get("latest_escrow_call_dt") or "",
+                        "long_comment_code": row_dict.get("long_comment_code") or "",
+                        "long_comment_date": row_dict.get("long_comment_date") or "",
+                        "long_comment_user_id": row_dict.get("long_comment_user_id") or "",
+                        "full_comment": row_dict.get("full_comment") or "",
+                        "comment_actv_flg": row_dict.get("comment_actv_flg") or "",
                         "call_reason": call_reason,
                         "customer_sentiment": customer_sentiment,
                         "main_escrow_issue": main_escrow_issue,

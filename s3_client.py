@@ -68,12 +68,13 @@ class S3Client:
         Retrieves the content of a single transcript from S3.
         Returns: (uuid, content, error_message)
         """
-        key = f"{self.config.s3_source_prefix}{uuid}.txt"
+        loan_num = uuid.split("_")[0] if "_" in uuid else uuid
+        key = f"{self.config.s3_source_prefix}{loan_num}.txt"
         
         if self.mock:
-            local_file = os.path.join(self.source_dir, f"{uuid}.txt")
+            local_file = os.path.join(self.source_dir, f"{loan_num}.txt")
             if not os.path.exists(local_file):
-                return uuid, "", f"Transcript file {uuid}.txt not found in mock bucket"
+                return uuid, "", f"Transcript file {loan_num}.txt not found in mock bucket"
             try:
                 with open(local_file, "r", encoding="utf-8") as f:
                     content = f.read()
@@ -82,7 +83,7 @@ class S3Client:
                 return uuid, "", f"Error reading mock file: {e}"
         else:
             try:
-                response = self.s3.get_object(Bucket=self.config.s3_bucket, Key=key)
+                response = self.s3.get_object(Bucket=self.config.s3_source_bucket, Key=key)
                 content = response["Body"].read().decode("utf-8")
                 return uuid, content, None
             except self.s3.exceptions.NoSuchKey:
